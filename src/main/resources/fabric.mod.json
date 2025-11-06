@@ -3,13 +3,13 @@
 	"id": "gravechest-mod",
 	"version": "${version}",
 	"name": "Gravechest Mod",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "On death, a chest appears containing all items you had in your inventory beforehand. No item loss through death, yay!",
 	"authors": [
-		"Me!"
+		"Ravaqor"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/Ravaqor/",
+		"sources": "https://github.com/Ravaqor/gravechest-mod"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/gravechest-mod/icon.png",
