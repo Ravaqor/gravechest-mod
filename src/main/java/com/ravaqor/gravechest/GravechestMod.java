@@ -4,7 +4,6 @@ import com.ravaqor.gravechest.events.CreateGravestoneEvent;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
