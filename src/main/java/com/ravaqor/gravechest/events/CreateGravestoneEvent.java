@@ -5,17 +5,20 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ChestBlock;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.block.enums.ChestType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeath {
 
@@ -25,10 +28,15 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
     public boolean allowDeath(LivingEntity livingEntity, DamageSource damageSource, float v) {
         if (!(livingEntity instanceof PlayerEntity player)) return true;
 
+        Inventory playerInventory = player.getInventory();
+        List<ItemStack> items = new ArrayList<>();
+        for (int i = 0; i < playerInventory.size(); i++) {
+            items.add(playerInventory.getStack(i));
+        }
+        if (items.isEmpty()) return true;
+
         World world = player.getEntityWorld();
         BlockPos deathPos = player.getBlockPos();
-
-        BlockState chest = Blocks.CHEST.getDefaultState();
 
         DoubleBlockTuple chestPos = findNearestAvailablePos(world, deathPos, GRAVE_SEARCH_RADIUS);
 
@@ -51,8 +59,22 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
                 leftChest.updateNeighbors(world, chestPos.posLeft, 3);
                 rightChest.updateNeighbors(world, chestPos.posRight, 3);
 
+                BlockState state = world.getBlockState(chestPos.posLeft);
 
-
+                if (!(state.getBlock() instanceof ChestBlock chestBlock)) {
+                    GravechestMod.LOGGER.error("Invalid chest block entity at {}", deathPos);
+                    return false;
+                }
+                Inventory chestInventory = ChestBlock.getInventory(chestBlock, state, world, chestPos.posLeft, true);
+                assert chestInventory != null;
+                int slotCounter = 0;
+                for (ItemStack stack : items) {
+                    chestInventory.setStack(slotCounter, stack);
+                    slotCounter++;
+                }
+                chestInventory.markDirty();
+                playerInventory.clear();
+                playerInventory.markDirty();
             }
         }
         return true;
