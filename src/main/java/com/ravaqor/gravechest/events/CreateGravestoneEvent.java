@@ -20,6 +20,13 @@ import net.minecraft.world.World;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * When the player dies, a chest is created upon death containing all the players items.
+ * <p>
+ * When the dying player's inventory is empty, no chest is created. On the other hand, if the inventory has more slots
+ * than a single chest, a double chest is created instead. When no possible location could be found in the specified
+ * search radius, no chest is placed and the player drops his items as normal.
+ */
 public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeath {
 
     public static int GRAVE_SEARCH_RADIUS = 5;
@@ -43,18 +50,16 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
         BlockPos deathPos = player.getBlockPos();
 
         if (items.size() <= SINGLE_CHEST_SIZE) {
-            player.sendMessage(Text.of("Single Chest"), false);
             BlockPos chestPos = findNearestAvailableSinglePos(world, deathPos, GRAVE_SEARCH_RADIUS);
             if (chestPos != null) {
                 world.setBlockState(chestPos, Blocks.CHEST.getDefaultState(), 3);
-                return moveItems(items, player, chestPos);
+                moveItems(items, player, chestPos);
             }
         } else {
-            player.sendMessage(Text.of("Double Chest"), false);
             DoubleBlockTuple chestPos = findNearestAvailableDoublePos(world, deathPos, GRAVE_SEARCH_RADIUS);
             if (chestPos != null) {
                 placeDoubleChest(chestPos, world);
-                return moveItems(items, player, chestPos.posLeft);
+                moveItems(items, player, chestPos.posLeft);
             }
         }
         return true;
@@ -77,7 +82,7 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
         rightChest.updateNeighbors(world, chestPos.posRight, 3);
     }
 
-    private static boolean moveItems(List<ItemStack> items, PlayerEntity player, BlockPos chestPos) {
+    private static void moveItems(List<ItemStack> items, PlayerEntity player, BlockPos chestPos) {
         World world = player.getEntityWorld();
         BlockPos deathPos = player.getBlockPos();
         PlayerInventory playerInventory = player.getInventory();
@@ -86,7 +91,7 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
 
         if (!(state.getBlock() instanceof ChestBlock chestBlock)) {
             GravechestMod.LOGGER.error("Invalid chest block entity at {}", deathPos);
-            return false;
+            return;
         }
         Inventory chestInventory = ChestBlock.getInventory(chestBlock, state, world, chestPos, true);
         assert chestInventory != null;
@@ -98,7 +103,6 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
         chestInventory.markDirty();
         playerInventory.clear();
         playerInventory.markDirty();
-        return true;
     }
 
     private static DoubleBlockTuple findNearestAvailableDoublePos(World world, BlockPos origin, int radius) {
