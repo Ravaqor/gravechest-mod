@@ -30,6 +30,7 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
 
     public static int GRAVE_SEARCH_RADIUS = 5;
     private static final int SINGLE_CHEST_SIZE = 27;
+    public static boolean ALLOW_GRAVESTONE_ON_VOID_DEATH = true;
 
     @Override
     public boolean allowDeath(LivingEntity livingEntity, DamageSource damageSource, float v) {
@@ -55,6 +56,10 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
                 moveItems(items, player, chestPos);
             }
         } else {
+            if (ALLOW_GRAVESTONE_ON_VOID_DEATH) {
+                deathPos = normalizeDeathPos(deathPos, world);
+            }
+
             DoubleBlockTuple chestPos = findNearestAvailableDoublePos(world, deathPos, GRAVE_SEARCH_RADIUS);
             if (chestPos != null) {
                 placeDoubleChest(chestPos, world);
@@ -151,5 +156,22 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
     }
 
     private enum Axis {EAST_WEST, NORTH_SOUTH}
+
+    /**
+     * Moves y-coordinate of the deathPos up until the {@link net.minecraft.world.dimension.DimensionType} minY is
+     * reached.
+     *
+     * @param deathPos The position where the player died.
+     * @param world The current world the player is in
+     * @return Gives back the new position, which is located at the players x and z coordinates, but y level of the
+     * min block limit of the corresponding dimension
+     */
+    private BlockPos normalizeDeathPos(BlockPos deathPos, World world) {
+        int distance = 0;
+        if (world.getDimension().minY() +  deathPos.getY() < 0) {
+            distance = world.getDimension().minY() - deathPos.getY();
+        }
+        return deathPos.up(distance);
+    }
 
 }
