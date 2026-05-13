@@ -49,6 +49,9 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
         World world = player.getEntityWorld();
         BlockPos deathPos = player.getBlockPos();
 
+        if (ALLOW_GRAVESTONE_ON_VOID_DEATH) {
+            deathPos = normalizeDeathPos(deathPos, world);
+        }
         if (items.size() <= SINGLE_CHEST_SIZE) {
             BlockPos chestPos = findNearestAvailableSinglePos(world, deathPos, GRAVE_SEARCH_RADIUS);
             if (chestPos != null) {
@@ -56,10 +59,6 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
                 moveItems(items, player, chestPos);
             }
         } else {
-            if (ALLOW_GRAVESTONE_ON_VOID_DEATH) {
-                deathPos = normalizeDeathPos(deathPos, world);
-            }
-
             DoubleBlockTuple chestPos = findNearestAvailableDoublePos(world, deathPos, GRAVE_SEARCH_RADIUS);
             if (chestPos != null) {
                 placeDoubleChest(chestPos, world);
@@ -168,7 +167,7 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
      */
     private BlockPos normalizeDeathPos(BlockPos deathPos, World world) {
         int distance = 0;
-        if (world.getDimension().minY() +  deathPos.getY() < 0) {
+        if (deathPos.getY() < world.getDimension().minY()) {
             distance = world.getDimension().minY() - deathPos.getY();
         }
         return deathPos.up(distance);
