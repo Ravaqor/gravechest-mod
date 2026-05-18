@@ -12,6 +12,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.registry.tag.DamageTypeTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
@@ -20,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * When the player dies, a chest is created upon death containing all the players items.
+ * When the player dies, a chest is created upon death containing all the players' items.
  * <p>
  * When the dying player's inventory is empty, no chest is created. On the other hand, if the inventory has more slots
  * than a single chest, a double chest is created instead. When no possible location could be found in the specified
@@ -35,6 +37,10 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
     @Override
     public boolean allowDeath(LivingEntity livingEntity, DamageSource damageSource, float v) {
         if (!(livingEntity instanceof PlayerEntity player)) return true;
+
+        if (hasUsableTotem(player) && canTotemSaveFrom(damageSource)) {
+            return true;
+        }
 
         Inventory playerInventory = player.getInventory();
         List<ItemStack> items = new ArrayList<>();
@@ -66,6 +72,15 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
             }
         }
         return true;
+    }
+
+    private static boolean hasUsableTotem(PlayerEntity player) {
+        return player.getMainHandStack().isOf(Items.TOTEM_OF_UNDYING)
+                || player.getOffHandStack().isOf(Items.TOTEM_OF_UNDYING);
+    }
+
+    private static boolean canTotemSaveFrom(DamageSource damageSource) {
+        return !damageSource.isIn(DamageTypeTags.BYPASSES_INVULNERABILITY);
     }
 
     private static void placeDoubleChest(DoubleBlockTuple chestPos, World world) {
