@@ -1,11 +1,15 @@
 package com.ravaqor.gravechest.events;
 
+import com.mojang.authlib.GameProfile;
 import com.ravaqor.gravechest.GravechestMod;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ChestBlock;
 import net.minecraft.block.enums.ChestType;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.ProfileComponent;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
@@ -13,13 +17,19 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.tag.DamageTypeTags;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * When the player dies, a chest is created upon death containing all the players' items.
@@ -42,8 +52,18 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
             return true;
         }
 
+        PlayerEntity killer = getKillingPlayer(player, damageSource);
+        if (killer != null) {
+            killer.sendMessage(Text.of(player.getStringifiedName() + " hat den Kopf verloren"), true);
+        }
+
+
         Inventory playerInventory = player.getInventory();
         List<ItemStack> items = new ArrayList<>();
+        if(killer != null) {
+            items.add(getPlayerSkull(player));
+        }
+
         for (int i = 0; i < playerInventory.size(); i++) {
             ItemStack stack = playerInventory.getStack(i);
             if (!stack.isEmpty()) {
@@ -81,6 +101,47 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
 
     private static boolean canTotemSaveFrom(DamageSource damageSource) {
         return !damageSource.isIn(DamageTypeTags.BYPASSES_INVULNERABILITY);
+    }
+
+    @Nullable
+    private static PlayerEntity getKillingPlayer(PlayerEntity victim, DamageSource damageSource) {
+        Entity attacker = damageSource.getAttacker();
+        if (attacker instanceof PlayerEntity player) {
+            return player;
+        }
+
+        Entity source = damageSource.getSource();
+        if (source instanceof PlayerEntity player) {
+            return player;
+        }
+
+        LivingEntity recentAttacker = victim.getAttacker();
+        if (recentAttacker instanceof PlayerEntity player) {
+            return player;
+        }
+
+        LivingEntity primeAdversary = victim.getPrimeAdversary();
+        if (primeAdversary instanceof PlayerEntity player) {
+            return player;
+        }
+
+        return null;
+    }
+
+    private static ItemStack getPlayerSkull(PlayerEntity target) {
+        if (!(target instanceof ServerPlayerEntity serverPlayer)) {
+            // If it's not a server player, we can't easily fetch the skin texture without async calls.
+            // Fallback to the basic profile (will show default skin) or throw an error.
+            // For now, let's try to get the profile from the server's profile repository if possible.
+            // But usually, this function is called with a ServerPlayerEntity.
+            return null;
+        }
+        GameProfile fullProfile = serverPlayer.getGameProfile();
+
+        ItemStack stack = new ItemStack(Items.PLAYER_HEAD);
+        stack.set(DataComponentTypes.PROFILE, ProfileComponent.ofStatic(fullProfile));
+
+        return stack;
     }
 
     private static void placeDoubleChest(DoubleBlockTuple chestPos, World world) {
