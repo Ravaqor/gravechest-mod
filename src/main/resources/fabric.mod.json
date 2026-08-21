@@ -17,18 +17,15 @@
 	"entrypoints": {
 		"main": [
 			"com.ravaqor.gravechest.GravechestMod"
-		],
-		"fabric-datagen": [
-			"com.ravaqor.gravechest.GravechestModDataGenerator"
 		]
 	},
 	"mixins": [
 		"gravechest-mod.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.17.3",
-		"minecraft": "~1.21.10",
-		"java": ">=21",
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.2",
+		"java": ">=25",
 		"fabric-api": "*"
 	},
 	"suggests": {

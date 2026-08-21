@@ -53,7 +53,7 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
 
         Player killer = getKillingPlayer(player, damageSource);
         if (killer != null) {
-            killer.displayClientMessage(Component.nullToEmpty(player.getPlainTextName() + " hat den Kopf verloren"), true);
+            killer.sendOverlayMessage(Component.nullToEmpty(player.getPlainTextName() + " hat den Kopf verloren"));
         }
 
 
