@@ -17,6 +17,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -59,8 +60,11 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
 
         Container playerInventory = player.getInventory();
         List<ItemStack> items = new ArrayList<>();
-        if(killer != null) {
-            items.add(getPlayerSkull(player));
+        if (killer != null) {
+            ItemStack skull = getPlayerSkull(player, killer);
+            if (skull != null) {
+                items.add(skull);
+            }
         }
 
         for (int i = 0; i < playerInventory.getContainerSize(); i++) {
@@ -127,7 +131,7 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
         return null;
     }
 
-    private static ItemStack getPlayerSkull(Player target) {
+    private static ItemStack getPlayerSkull(Player target, Player killer) {
         if (!(target instanceof ServerPlayer serverPlayer)) {
             // If it's not a server player, we can't easily fetch the skin texture without async calls.
             // Fallback to the basic profile (will show default skin) or throw an error.
@@ -139,6 +143,8 @@ public class CreateGravestoneEvent implements ServerLivingEntityEvents.AllowDeat
 
         ItemStack stack = new ItemStack(Items.PLAYER_HEAD);
         stack.set(DataComponents.PROFILE, ResolvableProfile.createResolved(fullProfile));
+        stack.set(DataComponents.LORE, new ItemLore(List.of(
+                Component.literal("Killed by " + killer.getPlainTextName()))));
 
         return stack;
     }
